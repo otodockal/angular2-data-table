@@ -135,6 +135,7 @@ node_modules/
 jspm_packages/
 dist/
 !release/
+*.lock
 
 # Click-Once directory
 publish/
@@ -229,3 +230,4 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+yarn.lock
