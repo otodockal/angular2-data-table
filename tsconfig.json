@@ -18,7 +18,8 @@
     "allowSyntheticDefaultImports": true,
     "suppressExcessPropertyErrors": true,
     "suppressImplicitAnyIndexErrors": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "declarationDir": "release"
   },
   "files": [
     "src/custom-types.d.ts",
@@ -31,5 +32,9 @@
   "buildOnSave": false,
   "awesomeTypescriptLoaderOptions": {
     "forkChecker": false
+  },
+  "angularCompilerOptions": {
+    "genDir": "release/",
+    "skipMetadataEmit": false
   }
 }

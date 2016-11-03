@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.1.0
+- Feature: NGC Complation
+- Bug: Null value in deepValueGetter (#243)
+- Chore: Update Depedencies
+
+## 1.0.0
+- Feature: Cell Selection and Keyboard Navigation
+- Feature: `activation` events
+- Enhancement: `OnPush` all the things!
+- Enhancement: Add `totalMessage` option for localization
+- Enhancement: Demo Page
+- Enhancement: Page Count Formatted
+- Enhancement: Automatically format column `prop` when no `name` passed
+- Enhancement: Add ability to pass false to `comparator` for sort handling via event
+- Bug: Window resize not updating rows in virtual scrolling
+- Chore: Switch to SemVer
+
+### Breaking Changes
+- `TableOptions` has been removed and options are `Input` on component now
+- `TableColumn` class has been removed, just pass normal objects
+- Event names has been renamed using Angular2 standards
+- Components have been renamed to Angular2 standards
+- Removed `StateService`
+
+## 0.12.0
+- Bug: Return empty string on undefined deep values (#232)
+- Bug: Fix force fill alog (#218)
+- Enhancement: Support for other icon types (#235)
+- Enhancement: Add ability to identify rows for proper selection (#154)
+
+## 0.11.2
+- Enhancement: Add ability to define css icon classes for pager / header
+- Chore: Uprade to Angular 2.1.1
+
+## 0.11.1
+- Chore: Polish on new build
+
+## 0.11.0
+- Chore: New build process
+- Bug: Fix detail row bug (#212)
+
+## 0.10.1
+- Bug: Fix `$$expanded` undefined with server paging (#210)
+
 ## 0.10.0
 - Chore: Upgrade to Angular 2.1.0 (#202)
 - Chore: Removed engine restrictions (#195)

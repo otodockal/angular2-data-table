@@ -8,9 +8,12 @@ var CleanWebpackPlugin = require('clean-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var autoprefixer = require('autoprefixer');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
+let ngtools = require('@ngtools/webpack');
 
 var ENV = process.env.NODE_ENV;
 var IS_PRODUCTION = ENV === 'production';
+var IS_PACKAGE = ENV === 'package';
 var VERSION = JSON.stringify(require('./package.json').version);
 
 function root(args) {
@@ -34,20 +37,17 @@ function webpackConfig(options = {}) {
     devtool: 'source-map',
 
     resolve: {
-      extensions: ['', '.ts', '.js', '.json', '.css', '.scss', '.html'],
-      root: root('src'),
-      descriptionFiles: ['package.json'],
+      extensions: ['.ts', '.js', '.json', '.css', '.scss', '.html'],
       modules: [
         'node_modules',
-        root('src')
+        root('src'),
+        root('demo')
       ]
     },
 
     entry: {
-      'default': './src/components/datatable.scss',
-      'app': './src/demos/bootstrap.ts',
-      'polyfills': './src/polyfills.ts',
-      'vendor': './src/vendor.ts'
+      'app': './demo/bootstrap.ts',
+      'polyfills': './demo/polyfills.ts'
     },
 
     devServer: {
@@ -72,17 +72,20 @@ function webpackConfig(options = {}) {
     },
 
     module: {
-      preLoaders: [
+      exprContextCritical: false,
+      rules: [
         {
+          enforce: 'pre',
           test: /\.js$/,
           loader: 'source-map',
           exclude: /(node_modules)/
-        }, {
+        },
+        {
+          enforce: 'pre',
           test: /\.ts$/,
-          loader: 'tslint'
-        }
-      ],
-      loaders: [
+          loader: 'tslint',
+          exclude: /(node_modules|release|dist)/
+        },
         {
           test: /\.ts$/,
           loaders: [
@@ -98,7 +101,7 @@ function webpackConfig(options = {}) {
               'style!css?sourceMap' :
               ExtractTextPlugin.extract({
                 fallbackLoader: 'style',
-                loader: !IS_PRODUCTION ?
+                loader: !IS_PACKAGE ?
                   'css?sourceMap' :
                   // 'css?sourceMap&minimize'
                   'css?sourceMap'
@@ -111,7 +114,7 @@ function webpackConfig(options = {}) {
               'style!css!postcss?sourceMap!sass?sourceMap' :
               ExtractTextPlugin.extract({
                 fallbackLoader: 'style',
-                loader: !IS_PRODUCTION ?
+                loader: !IS_PACKAGE ?
                   'css?sourceMap!postcss?sourceMap!sass?sourceMap' :
                   // 'css?sourceMap&minimize!postcss?sourceMap!sass?sourceMap'
                   'css?sourceMap!postcss?sourceMap!sass?sourceMap'
@@ -122,11 +125,6 @@ function webpackConfig(options = {}) {
 
     plugins: [
       new webpack.NamedModulesPlugin(),
-
-      new webpack.optimize.CommonsChunkPlugin({
-        name: ['vendor', 'polyfills'],
-        minChunks: Infinity
-      }),
 
       // https://github.com/angular/angular/issues/11580#issuecomment-246880731
       new webpack.ContextReplacementPlugin(
@@ -142,57 +140,47 @@ function webpackConfig(options = {}) {
         'APP_VERSION': VERSION
       }),
 
-      new HtmlWebpackPlugin({
-        template: 'src/index.html',
-        chunksSortMode: 'dependency',
-        title: 'swui'
-  		}),
+      new CopyWebpackPlugin([
+        {
+          from: 'assets',
+          to: 'assets'
+        }
+      ]),
 
-      new WebpackNotifierPlugin({
-        excludeWarnings: true
-      }),
-
-      new ProgressBarPlugin({
-        format: chalk.yellow.bold('Webpack Building...') + ' [:bar] ' + chalk.green.bold(':percent') + ' (:elapsed seconds)'
+      new webpack.LoaderOptionsPlugin({
+        options: {
+          context: root(),
+          tslint: {
+            emitErrors: false,
+            failOnHint: false,
+            resourcePath: 'src'
+          },
+          postcss: function() {
+            return [ autoprefixer ];
+          }
+        }
       })
-    ],
-
-    tslint: {
-      emitErrors: false,
-      failOnHint: false,
-      resourcePath: 'src'
-    },
-
-    postcss: function() {
-      return [ autoprefixer ];
-    }
+    ]
   };
 
   if(IS_HMR) {
     config.plugins.push(new webpack.HotModuleReplacementPlugin());
-  }
-
-  if(!IS_HMR) {
-    config.plugins.push(new CleanWebpackPlugin(['dist'], {
-      root: root(),
-      verbose: false,
-      dry: false
-    }));
-
+  } else {
     config.plugins.push(new ExtractTextPlugin({
       filename: '[name].css',
       allChunks: true
     }));
   }
 
-  if(IS_PRODUCTION) {
+  if(IS_PACKAGE) {
     config.output.path = root('release');
-    config.output.libraryTarget = 'commonjs2';
+
+    config.output.libraryTarget = 'umd';
+    config.output.library = 'angular2-data-table';
+    config.output.umdNamedDefine = true;
 
     config.entry = {
-      'index': './src/index.ts',
-      'default': './src/components/datatable.scss',
-      'material': './src/themes/material.scss'
+      'index': './src/index.ts'
     };
 
     config.externals = {
@@ -214,7 +202,59 @@ function webpackConfig(options = {}) {
       banner: banner,
       raw: true,
       entryOnly: true
+    }));
+
+    console.log('here', root('datatable.module') )
+
+    /*
+    config.plugins.push(new ngtools.AotPlugin({
+      tsConfigPath: './tsconfig.json',
+      baseDir: root(),
+      entryModule: root('datatable.module.ts') + '#Angular2DataTableModule'
     }))
+    */
+
+    /*
+    config.plugins.push(new CleanWebpackPlugin(['release'], {
+      root: root(),
+      verbose: false,
+      dry: false
+    }));
+    */
+
+  } else {
+
+    config.plugins.push(new webpack.optimize.CommonsChunkPlugin({
+      name: ['polyfills'],
+      minChunks: Infinity
+    }));
+
+    config.plugins.push(new HtmlWebpackPlugin({
+      template: 'demo/index.html',
+      chunksSortMode: 'dependency',
+      title: 'angular2-data-table'
+    }));
+
+    if(IS_PRODUCTION) {
+
+      config.plugins.push(new CleanWebpackPlugin(['dist'], {
+        root: root(),
+        verbose: false,
+        dry: false
+      }));
+
+      config.plugins.push(new webpack.optimize.UglifyJsPlugin());
+
+    } else {
+      config.plugins.push(new WebpackNotifierPlugin({
+        excludeWarnings: true
+      }));
+
+      config.plugins.push(new ProgressBarPlugin({
+        format: chalk.yellow.bold('Webpack Building...') + 
+          ' [:bar] ' + chalk.green.bold(':percent') + ' (:elapsed seconds)'
+      }));
+    }
   }
 
   return config;
